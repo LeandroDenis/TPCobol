@@ -14,16 +14,61 @@
                                ORGANIZATION IS LINE SEQUENTIAL
                                FILE STATUS IS M-ESTADO.
 
-           SELECT LISTADO ASSIGN TO PRINTER.
+           SELECT N1           ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL
+                               FILE STATUS IS N1-ESTADO.
+
+           SELECT N2           ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL
+                               FILE STATUS IS N2-ESTADO.
+
+           SELECT N3           ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL
+                               FILE STATUS IS N3-ESTADO.
+
+           SELECT MAE-ACT      ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL
+                               FILE STATUS IS MAE-ACT-ESTADO.
+
+           SELECT RECHAZOS     ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL
+                               FILE STATUS IS RECHAZOS-ESTADO.
+
+           SELECT LISTADO      ASSIGN TO PRINTER.
 
        DATA DIVISION.
        FILE SECTION.
-       FD  M      LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "MAESTRO.DAT".
-       01  X.
+       FD  M       LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../MAESTRO.DAT".
+       01  MAE.
            03  XXX-PROP1       PIC X(5).
 
-       FD LISTADO  LABEL RECORD IS OMITTED.
+       FD  N1      LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../NOVEDADES1.DAT".
+       01  NOV1.
+           03  XXX-PROP1       PIC X(5).
+
+       FD  N2      LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../NOVEDADES2.DAT".
+       01  NOV2.
+           03  XXX-PROP1       PIC X(5).
+
+       FD  N3      LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../NOVEDADES3.DAT".
+       01  NOV2.
+           03  XXX-PROP1       PIC X(5).
+
+       FD  MAE-ACT LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../MAESTRO-ACT.DAT".
+       01  ACT.
+           03  XXX-PROP1       PIC X(5).
+
+       FD  RECHAZOS LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../RECHAZOS.DAT".
+       01  RECH.
+           03  XXX-PROP1       PIC X(5).
+
+       FD  LISTADO  LABEL RECORD IS OMITTED.
 
        01  LINEA               PIC X(80).
 
@@ -40,6 +85,8 @@
        77  N1-ESTADO           PIC XX.
        77  N2-ESTADO           PIC XX.
        77  N3-ESTADO           PIC XX.
+       77  MAE-ACT-ESTADO      PIC XX.
+       77  RECHAZOS-ESTADO     PIC XX.
        77  TOTAL-GENERAL       PIC 9(1).
 
        PROCEDURE DIVISION.
@@ -61,7 +108,27 @@
       *******
            OPEN INPUT M.
            IF M-ESTADO NOT = ZERO
-               DISPLAY "ERROR EN OPEN  FS: " M-ESTADO
+               DISPLAY "ERROR EN OPEN MAESTRO FS: " M-ESTADO
+               STOP RUN.
+           OPEN INPUT N1.
+           IF N1-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN NOVEDADES1 FS: " N1-ESTADO
+               STOP RUN.
+           OPEN INPUT N2.
+           IF N2-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN NOVEDADES2 FS: " N2-ESTADO
+               STOP RUN.
+           OPEN INPUT N3.
+           IF N3-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN NOVEDADES3 FS: " N3-ESTADO
+               STOP RUN.
+           OPEN OUTPUT MAE-ACT.
+           IF N1-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN  FS: " MAE-ACT-ESTADO
+               STOP RUN.
+           OPEN OUTPUT RECHAZOS.
+           IF RECHAZOS-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN  FS: " RECHAZOS-ESTADO
                STOP RUN.
            OPEN OUTPUT LISTADO.
       *-----------------------------------------------------------------
@@ -92,7 +159,14 @@
       *-----------------------------------------------------------------
       *******
        070-CERRAR-ARCHIVOS.
+           CLOSE
+               M
+               N1
+               N2
+               N3
+               MAE-ACT
+               RECHAZOS
+               LISTADO.
       *******
-
       *-----------------------------------------------------------------
        END PROGRAM TP-PARTE-1.
