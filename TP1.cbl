@@ -85,13 +85,13 @@
 
        FD  RECHAZOS LABEL RECORD IS STANDARD
                    VALUE OF FILE-ID IS "../RECHAZOS.DAT".
-       01  RECH.
-           03  RECH-PATENTE        PIC X(6).
-           03  RECH-FECHA          PIC 9(8).
-           03  RECH-TIPO-DOC       PIC X.
-           03  RECH-NRO-DOC        PIC X(20).
-           03  RECH-MOTIVO         PIC 9.
-           03  RECH-AGENCIA        PIC 9.
+       01  RECHAZO.
+           03  RECHAZO-PATENTE        PIC X(6).
+           03  RECHAZO-FECHA          PIC 9(8).
+           03  RECHAZO-TIPO-DOC       PIC X.
+           03  RECHAZO-NRO-DOC        PIC X(20).
+           03  RECHAZO-MOTIVO         PIC 9.
+           03  RECHAZO-AGENCIA        PIC 9.
 
        FD  AUTOS   LABEL RECORD IS STANDARD
                    VALUE OF FILE-ID IS "../AUTOS.DAT".
@@ -136,6 +136,13 @@
        01  WS-EXISTE           PIC X(2).
        01  WS-EXISTE-TABLA     PIC X(2).
        01  WS-MENOR-FECHA      PIC 9(8).
+       01  RECH.
+           03  RECH-PATENTE        PIC X(6).
+           03  RECH-FECHA          PIC 9(8).
+           03  RECH-TIPO-DOC       PIC X.
+           03  RECH-NRO-DOC        PIC X(20).
+           03  RECH-MOTIVO         PIC 9.
+           03  RECH-AGENCIA        PIC 9.
 
        01  WS-TABLE.
            03  WS-AUTO OCCURS 300 TIMES
@@ -390,8 +397,8 @@
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                WRITE ACT FROM MAE
                MOVE "SI" TO WS-ALQ
-           ELSE
-               PERFORM 160-GRABAR-RECHAZO.
+      *>      ELSE
+      *>          PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-MAESTRO.
       *-----------------------------------------------------------------
       *******
@@ -401,6 +408,11 @@
                WRITE ACT FROM NOV1
                MOVE "SI" TO WS-ALQ
            ELSE
+               MOVE NOV1-PATENTE TO RECH-PATENTE.
+               MOVE NOV1-FECHA TO RECH-FECHA.
+               MOVE NOV1-TIPO-DOC TO RECH-TIPO-DOC.
+               MOVE NOV1-NRO-DOC TO RECH-NRO-DOC.
+               MOVE 1 TO RECH-AGENCIA.
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV1.
       *-----------------------------------------------------------------
@@ -411,6 +423,11 @@
                WRITE ACT FROM NOV2
                MOVE "SI" TO WS-ALQ
            ELSE
+               MOVE NOV2-PATENTE TO RECH-PATENTE.
+               MOVE NOV2-FECHA TO RECH-FECHA.
+               MOVE NOV2-TIPO-DOC TO RECH-TIPO-DOC.
+               MOVE NOV2-NRO-DOC TO RECH-NRO-DOC.
+               MOVE 2 TO RECH-AGENCIA.
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV2.
       *-----------------------------------------------------------------
@@ -421,12 +438,21 @@
                WRITE ACT FROM NOV3
                MOVE "SI" TO WS-ALQ
            ELSE
+               MOVE NOV3-PATENTE TO RECH-PATENTE.
+               MOVE NOV3-FECHA TO RECH-FECHA.
+               MOVE NOV3-TIPO-DOC TO RECH-TIPO-DOC.
+               MOVE NOV3-NRO-DOC TO RECH-NRO-DOC.
+               MOVE 3 TO RECH-AGENCIA.
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV3.
       *-----------------------------------------------------------------
       *******
        160-GRABAR-RECHAZO.
-      *>      DISPLAY "RECHAZADO".
+           IF WS-EXISTE = "NO"
+               MOVE 2 TO RECH-MOTIVO
+           ELSE
+               MOVE 1 TO RECH-MOTIVO.
+           WRITE RECHAZO FROM RECH.
       *******
       *-----------------------------------------------------------------
        END PROGRAM TP-PARTE-1.
