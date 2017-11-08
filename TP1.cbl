@@ -344,10 +344,11 @@
            <> MAE-PATENTE OR WS-MENOR-FECHA <> MAE-FECHA.
            PERFORM 150-PROCESO-N1 UNTIL N1-EOF = "SI" OR WS-NROPATENTE
            <> NOV1-PATENTE OR WS-MENOR-FECHA <> NOV1-FECHA.
-           PERFORM 150-PROCESO-N2 UNTIL N2-EOF = "SI" OR WS-NROPATENTE
-           <> NOV2-PATENTE OR WS-MENOR-FECHA <> NOV2-FECHA.
            PERFORM 150-PROCESO-N3 UNTIL N3-EOF = "SI" OR WS-NROPATENTE
            <> NOV3-PATENTE OR WS-MENOR-FECHA <> NOV3-FECHA.
+           PERFORM 150-PROCESO-N2 UNTIL N2-EOF = "SI" OR WS-NROPATENTE
+           <> NOV2-PATENTE OR WS-MENOR-FECHA <> NOV2-FECHA.
+
            PERFORM 100-DETERMINO-MENOR-PATENTE.
       *-----------------------------------------------------------------
       *******
@@ -362,8 +363,7 @@
            SEARCH WS-AUTO
                AT END MOVE "NO" TO WS-EXISTE-TABLA
                WHEN WS-AUTO-PATENTE(IND)EQUALS WS-NROPATENTE
-               MOVE "SI" TO WS-EXISTE
-               COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1.
+               MOVE "SI" TO WS-EXISTE.
       *******
       *-----------------------------------------------------------------
       *******
@@ -397,14 +397,14 @@
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                WRITE ACT FROM MAE
                MOVE "SI" TO WS-ALQ
-      *>      ELSE
-      *>          PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-MAESTRO.
       *-----------------------------------------------------------------
       *******
        150-PROCESO-N1.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
                WRITE ACT FROM NOV1
                MOVE "SI" TO WS-ALQ
            ELSE
@@ -420,6 +420,8 @@
        150-PROCESO-N2.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
                WRITE ACT FROM NOV2
                MOVE "SI" TO WS-ALQ
            ELSE
@@ -435,6 +437,8 @@
        150-PROCESO-N3.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
                WRITE ACT FROM NOV3
                MOVE "SI" TO WS-ALQ
            ELSE
