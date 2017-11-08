@@ -136,12 +136,6 @@
        01  WS-EXISTE           PIC X(2).
        01  WS-EXISTE-TABLA     PIC X(2).
        01  WS-MENOR-FECHA      PIC 9(8).
-       01  MAESTRO.
-           03  MAESTRO-PATENTE         PIC X(6).
-           03  MAESTRO-FECHA           PIC 9(8).
-           03  MAESTRO-TIPO-DOC        PIC X.
-           03  MAESTRO-NRO-DOC         PIC X(20).
-           03  MAESTRO-IMPORTE         PIC 9(4)V99.
 
        01  WS-TABLE.
            03  WS-AUTO OCCURS 300 TIMES
@@ -368,8 +362,6 @@
       *******
        140-DETERMINO-MENOR-FECHA.
       *******
-           DISPLAY WS-NROPATENTE " " MAE-PATENTE " " NOV1-PATENTE " "
-           NOV2-PATENTE " " NOV3-PATENTE.
            IF M-EOF = "NO" AND MAE-PATENTE = WS-NROPATENTE
                MOVE MAE-FECHA TO WS-MENOR-FECHA
            ELSE
@@ -405,7 +397,6 @@
       *******
        150-PROCESO-N1.
       *******
-           DISPLAY "N1".
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                WRITE ACT FROM NOV1
                MOVE "SI" TO WS-ALQ
@@ -426,7 +417,6 @@
       *******
        150-PROCESO-N3.
       *******
-           DISPLAY "N3".
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                WRITE ACT FROM NOV3
                MOVE "SI" TO WS-ALQ
