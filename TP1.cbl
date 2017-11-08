@@ -39,14 +39,13 @@
                                FILE STATUS IS AUTOS-ESTADO.
 
            SELECT LISTADO      ASSIGN TO PRINTER.
-
        DATA DIVISION.
        FILE SECTION.
        FD  M       LABEL RECORD IS STANDARD
                    VALUE OF FILE-ID IS "../MAESTRO.DAT".
        01  MAE.
            03  MAE-PATENTE         PIC X(6).
-           03  MAE-FECHA           PIC 9(6).
+           03  MAE-FECHA           PIC 9(8).
            03  MAE-TIPO-DOC        PIC X.
            03  MAE-NRO-DOC         PIC X(20).
            03  MAE-IMPORTE         PIC 9(4)V99.
@@ -129,9 +128,24 @@
        77  AUTOS-ESTADO        PIC XX.
        77  WS-TOTAL-GENERAL    PIC 9(1).
        01  WS-SUB              PIC 9(3).
+       01  WS-MENOR-PATENTE    PIC X(6).
+       01  WS-NROPATENTE       PIC X(6).
+       01  WS-TOTAL-PATENTE    PIC 9(3).
+       01  WS-CANTIDAD-DIAS    PIC 9(3).
+       01  WS-ALQ              PIC X(2).
+       01  WS-EXISTE           PIC X(2).
+       01  WS-EXISTE-TABLA     PIC X(2).
+       01  WS-MENOR-FECHA      PIC 9(8).
+       01  MAESTRO.
+           03  MAESTRO-PATENTE         PIC X(6).
+           03  MAESTRO-FECHA           PIC 9(8).
+           03  MAESTRO-TIPO-DOC        PIC X.
+           03  MAESTRO-NRO-DOC         PIC X(20).
+           03  MAESTRO-IMPORTE         PIC 9(4)V99.
 
        01  WS-TABLE.
-           03  WS-AUTO OCCURS 300 TIMES.
+           03  WS-AUTO OCCURS 300 TIMES
+               INDEXED BY IND.
                05  WS-AUTO-PATENTE     PIC X(6).
                05  WS-AUTO-DESC        PIC X(30).
                05  WS-AUTO-MARCA       PIC X(20).
@@ -211,15 +225,24 @@
       *******
        050-PROCESAR.
       *******
-
+           PERFORM 100-DETERMINO-MENOR-PATENTE.
+           MOVE WS-NROPATENTE TO WS-MENOR-PATENTE.
+           MOVE 0 TO WS-TOTAL-PATENTE.
+           MOVE 0 TO WS-CANTIDAD-DIAS.
+           PERFORM 110-PROCESO-PATENTE UNTIL (M-EOF = "SI" AND
+            N1-EOF = "SI" AND N2-EOF = "SI" AND N3-EOF = "SI") OR
+            WS-MENOR-PATENTE <> WS-NROPATENTE.
+           PERFORM 120-ESCRIBIR-TOTAL-PATENTE.
+           COMPUTE WS-TOTAL-GENERAL = WS-TOTAL-GENERAL +
+           WS-TOTAL-PATENTE.
       *-----------------------------------------------------------------
       *******
        060-ESCRIBIR-TOTAL-GENERAL.
       *******
-
       *-----------------------------------------------------------------
       *******
        070-CERRAR-ARCHIVOS.
+      *******
            CLOSE
                M
                N1
@@ -227,11 +250,13 @@
                N3
                MAE-ACT
                RECHAZOS
+               AUTOS
                LISTADO.
       *******
       *-----------------------------------------------------------------
       *******
        080-LEER-MAESTRO.
+      ******
            READ M
                AT END MOVE "SI" TO M-EOF.
            IF M-ESTADO NOT = ZERO AND 10
@@ -241,6 +266,7 @@
       *-----------------------------------------------------------------
       *******
        080-LEER-NOV1.
+      ******
            READ N1
                AT END MOVE "SI" TO N1-EOF.
            IF N1-ESTADO NOT = ZERO AND 10
@@ -250,6 +276,7 @@
       *-----------------------------------------------------------------
       *******
        080-LEER-NOV2.
+      ******
            READ N2
                AT END MOVE "SI" TO N2-EOF.
            IF N2-ESTADO NOT = ZERO AND 10
@@ -259,6 +286,7 @@
       *-----------------------------------------------------------------
       *******
        080-LEER-NOV3.
+      ******
            READ N3
                AT END MOVE "SI" TO N3-EOF.
            IF N3-ESTADO NOT = ZERO AND 10
@@ -268,6 +296,7 @@
       *-----------------------------------------------------------------
       *******
        080-LEER-AUTOS.
+      ******
            READ AUTOS
                AT END MOVE "SI" TO AUTOS-EOF.
            IF AUTOS-ESTADO NOT = ZERO AND 10
@@ -277,9 +306,137 @@
       *-----------------------------------------------------------------
       *******
        090-CARGAR-AUTOS.
+      ******
            MOVE AUT TO WS-AUTO(WS-SUB).
            ADD 1 TO WS-SUB.
            PERFORM 080-LEER-AUTOS.
+      *******
+      *-----------------------------------------------------------------
+      *******
+       100-DETERMINO-MENOR-PATENTE.
+      *******
+           IF M-EOF = "NO"
+               MOVE MAE-PATENTE TO WS-NROPATENTE
+           ELSE
+               IF N1-EOF = "NO"
+                   MOVE NOV1-PATENTE TO WS-NROPATENTE
+               ELSE
+                   IF N2-EOF = "NO"
+                       MOVE NOV2-PATENTE TO WS-NROPATENTE
+                   ELSE
+                       MOVE NOV3-PATENTE TO WS-NROPATENTE.
+           IF N1-EOF = "NO" AND NOV1-PATENTE < WS-NROPATENTE
+               MOVE NOV1-PATENTE TO WS-NROPATENTE.
+           IF N2-EOF = "NO" AND NOV2-PATENTE < WS-NROPATENTE
+               MOVE NOV2-PATENTE TO WS-NROPATENTE.
+           IF N3-EOF = "NO" AND NOV3-PATENTE < WS-NROPATENTE
+               MOVE NOV3-PATENTE TO WS-NROPATENTE.
+      *-----------------------------------------------------------------
+      *******
+       110-PROCESO-PATENTE.
+      *******
+           MOVE "NO" TO WS-ALQ.
+           MOVE "NO" TO WS-EXISTE.
+           PERFORM 130-BUSCO-TABLA.
+           PERFORM 140-DETERMINO-MENOR-FECHA.
+           PERFORM 150-PROCESO-M UNTIL M-EOF = "SI" OR WS-NROPATENTE
+           <> MAE-PATENTE OR WS-MENOR-FECHA <> MAE-FECHA.
+           PERFORM 150-PROCESO-N1 UNTIL N1-EOF = "SI" OR WS-NROPATENTE
+           <> NOV1-PATENTE OR WS-MENOR-FECHA <> NOV1-FECHA.
+           PERFORM 150-PROCESO-N2 UNTIL N2-EOF = "SI" OR WS-NROPATENTE
+           <> NOV2-PATENTE OR WS-MENOR-FECHA <> NOV2-FECHA.
+           PERFORM 150-PROCESO-N3 UNTIL N3-EOF = "SI" OR WS-NROPATENTE
+           <> NOV3-PATENTE OR WS-MENOR-FECHA <> NOV3-FECHA.
+           PERFORM 100-DETERMINO-MENOR-PATENTE.
+      *-----------------------------------------------------------------
+      *******
+       120-ESCRIBIR-TOTAL-PATENTE.
+      *******
+      *-----------------------------------------------------------------
+      *******
+       130-BUSCO-TABLA.
+      *******
+           MOVE "NO" TO WS-EXISTE.
+           MOVE 1 TO IND.
+           SEARCH WS-AUTO
+               AT END MOVE "NO" TO WS-EXISTE-TABLA
+               WHEN WS-AUTO-PATENTE(IND)EQUALS WS-NROPATENTE
+               MOVE "SI" TO WS-EXISTE
+               COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1.
+      *******
+      *-----------------------------------------------------------------
+      *******
+       140-DETERMINO-MENOR-FECHA.
+      *******
+           DISPLAY WS-NROPATENTE " " MAE-PATENTE " " NOV1-PATENTE " "
+           NOV2-PATENTE " " NOV3-PATENTE.
+           IF M-EOF = "NO" AND MAE-PATENTE = WS-NROPATENTE
+               MOVE MAE-FECHA TO WS-MENOR-FECHA
+           ELSE
+               IF N1-EOF = "NO" AND NOV1-PATENTE = WS-NROPATENTE
+                       MOVE NOV1-FECHA TO WS-MENOR-FECHA
+                   ELSE
+                       IF N2-EOF = "NO" AND NOV2-PATENTE = WS-NROPATENTE
+                           MOVE NOV2-FECHA TO WS-MENOR-FECHA
+                       ELSE
+                           IF N3-EOF = "NO" AND
+                               NOV3-PATENTE = WS-NROPATENTE
+                           MOVE NOV3-FECHA TO WS-MENOR-FECHA.
+           IF NOV1-FECHA < WS-MENOR-FECHA AND
+               NOV1-PATENTE = WS-NROPATENTE AND N1-EOF = "NO"
+               MOVE NOV1-FECHA TO WS-MENOR-FECHA.
+           IF NOV2-FECHA < WS-MENOR-FECHA AND N2-EOF = "NO" AND
+               NOV2-PATENTE = WS-NROPATENTE
+               MOVE NOV2-FECHA TO WS-MENOR-FECHA.
+           IF NOV3-FECHA < WS-MENOR-FECHA AND
+               NOV3-PATENTE = WS-NROPATENTE AND N3-EOF = "NO"
+               MOVE NOV3-FECHA TO WS-MENOR-FECHA.
+      *-----------------------------------------------------------------
+      *******
+       150-PROCESO-M.
+      *******
+           IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               WRITE ACT FROM MAE
+               MOVE "SI" TO WS-ALQ
+           ELSE
+               PERFORM 160-GRABAR-RECHAZO.
+           PERFORM 080-LEER-MAESTRO.
+      *-----------------------------------------------------------------
+      *******
+       150-PROCESO-N1.
+      *******
+           DISPLAY "N1".
+           IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               WRITE ACT FROM NOV1
+               MOVE "SI" TO WS-ALQ
+           ELSE
+               PERFORM 160-GRABAR-RECHAZO.
+           PERFORM 080-LEER-NOV1.
+      *-----------------------------------------------------------------
+      *******
+       150-PROCESO-N2.
+      *******
+           IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               WRITE ACT FROM NOV2
+               MOVE "SI" TO WS-ALQ
+           ELSE
+               PERFORM 160-GRABAR-RECHAZO.
+           PERFORM 080-LEER-NOV2.
+      *-----------------------------------------------------------------
+      *******
+       150-PROCESO-N3.
+      *******
+           DISPLAY "N3".
+           IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
+               WRITE ACT FROM NOV3
+               MOVE "SI" TO WS-ALQ
+           ELSE
+               PERFORM 160-GRABAR-RECHAZO.
+           PERFORM 080-LEER-NOV3.
+      *-----------------------------------------------------------------
+      *******
+       160-GRABAR-RECHAZO.
+      *>      DISPLAY "RECHAZADO".
       *******
       *-----------------------------------------------------------------
        END PROGRAM TP-PARTE-1.
