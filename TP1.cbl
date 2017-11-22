@@ -38,7 +38,8 @@
                                ORGANIZATION IS LINE SEQUENTIAL
                                FILE STATUS IS AUTOS-ESTADO.
 
-           SELECT LISTADO      ASSIGN TO PRINTER.
+           SELECT LISTADO      ASSIGN TO DISK
+                               ORGANIZATION IS LINE SEQUENTIAL.
        DATA DIVISION.
        FILE SECTION.
        FD  M       LABEL RECORD IS STANDARD
@@ -78,7 +79,7 @@
                    VALUE OF FILE-ID IS "../MAESTRO-ACT.DAT".
        01  ACT.
            03  ACT-PATENTE         PIC X(6).
-           03  ACT-FECHA           PIC 9(6).
+           03  ACT-FECHA           PIC 9(8).
            03  ACT-TIPO-DOC        PIC X.
            03  ACT-NRO-DOC         PIC X(20).
            03  ACT-IMPORTE         PIC 9(4)V99.
@@ -104,9 +105,10 @@
            03  AUT-TAMAÑO      PIC X.
            03  AUT-IMPORTE     PIC 9(4)V99.
 
-       FD  LISTADO  LABEL RECORD IS OMITTED.
+       FD  LISTADO  LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../LISTADO.DAT".
 
-       01  LINEA               PIC X(80).
+       01  LINEA               PIC X(60).
 
        WORKING-STORAGE SECTION.
        77  M-EOF               PIC XXX     VALUE "NO".
@@ -126,7 +128,7 @@
        77  MAE-ACT-ESTADO      PIC XX.
        77  RECHAZOS-ESTADO     PIC XX.
        77  AUTOS-ESTADO        PIC XX.
-       77  WS-TOTAL-GENERAL    PIC 9(1).
+       77  WS-TOTAL-GENERAL    PIC 9(7)V99.
        01  WS-SUB              PIC 9(3).
        01  WS-MENOR-PATENTE    PIC X(6).
        01  WS-NROPATENTE       PIC X(6).
@@ -136,6 +138,92 @@
        01  WS-EXISTE           PIC X(2).
        01  WS-EXISTE-TABLA     PIC X(2).
        01  WS-MENOR-FECHA      PIC 9(8).
+       01  WS-LINEA            PIC 9(2).
+       01  WS-ESCRIBE_ENCABE   PIC X(2).
+       01  PTR-DETALLE.
+           03 PTR-DESC         PIC X(30).
+           03 PTR-MARCA        PIC X(20).
+           03 PTR-COLOR        PIC X(10).
+           03 PTR-TAMANIO      PIC X.
+           03 PTR-IMPORTE      PIC 9(4)V99.
+       01  FECHA.
+           03 FECHA-AA         PIC 9(4).
+           03 FECHA-MM         PIC 9(2).
+           03 FECHA-DD         PIC 9(2).
+       01  PE1-ENCABE.
+           03 FILLER           PIC X(7) VALUE 'Fecha: '.
+           03 PE1-FECHA-DD     PIC 99.
+           03 FILLER           PIC X   VALUE '/'.
+           03 PE1-FECHA-MM     PIC 99.
+           03 FILLER           PIC X   VALUE '/'.
+           03 PE1-FECHA-AA     PIC 9999.
+           03 FILLER           PIC X(34) VALUE ' '.
+           03 FILLER           PIC X(6) VALUE 'Hoja: '.
+           03 PE1-HOJA         PIC 999.
+       01  PE2-ENCABE.
+           03 FILLER           PIC X(15) VALUE ' '.
+           03 FILLER           PIC X(45) VALUE 'Listado de autos alquila
+      -    'dos aprobados'.
+       01  PE3-ENCABE          PIC X(60) VALUE ' '.
+       01  PE4-ENCABE.
+           03 FILLER           PIC X(9) VALUE 'Patente: '.
+           03 PE4-PATENTE      PIC XXX999.
+           03 FILLER           PIC X(2) VALUE ' '.
+           03 FILLER           PIC X(13) VALUE 'Descripcion: '.
+           03 PE4-DESC         PIC X(30).
+       01  PE5-ENCABE.
+           03 FILLER           PIC X(17) VALUE ' '.
+           03 FILLER           PIC X(7) VALUE 'Marca: '.
+           03 PE5-MARCA        PIC X(20).
+           03 FILLER           PIC X(6) VALUE ' '.
+       01  PE6-ENCABE.
+           03 FILLER           PIC X(17) VALUE ' '.
+           03 FILLER           PIC X(7) VALUE 'Color: '.
+           03 PE6-COLOR        PIC X(10).
+           03 FILLER           PIC X(16) VALUE ' '.
+       01  PE7-ENCABE.
+           03 FILLER           PIC X(17) VALUE ' '.
+           03 FILLER           PIC X(8) VALUE 'Tamano: '.
+           03 PE7-TAMANIO      PIC X.
+           03 FILLER           PIC X(26) VALUE ' '.
+       01  PE8-ENCABE.
+           03 FILLER           PIC X(10) VALUE ' '.
+           03 FILLER           PIC X(5) VALUE 'Fecha'.
+           03 FILLER           PIC X(8) VALUE ' '.
+           03 FILLER           PIC X(8) VALUE 'Tipo Doc'.
+           03 FILLER           PIC X(3) VALUE ' '.
+           03 FILLER           PIC X(14) VALUE 'Nro. Documento'.
+           03 FILLER           PIC X(3) VALUE ' '.
+           03 FILLER           PIC X(7) VALUE 'Agencia'.
+           03 FILLER           PIC X(2) VALUE ' '.
+       01  PE9-ENCABE.
+           03 FILLER           PIC X(60) VALUE ALL '_'.
+       01  PTR-ROW.
+           03 FILLER           PIC X(8) VALUE ' '.
+           03 ROW-FECHA.
+               05 ROW-FECHA-DD PIC 99.
+               05 FILLER       PIC X VALUE '/'.
+               05 ROW-FECHA-MM PIC 99.
+               05 FILLER       PIC X VALUE '/'.
+               05 ROW-FECHA-AA PIC 9999.
+           03 FILLER           PIC X(7) VALUE ' '.
+           03 ROW-DOC          PIC X.
+           03 FILLER           PIC X(9) VALUE ' '.
+           03 ROW-NRO-DOC      PIC X(20).
+           03 ROW-AG           PIC 9.
+           03 FILLER           PIC X(2) VALUE ' '.
+       01  PTR-TOTAL.
+           03 FILLER           PIC X(19) VALUE 'Totales por patente'.
+           03 FILLER           PIC X(3) VALUE ' '.
+           03 FILLER           PIC X(17) VALUE 'Cantidad de dias '.
+           03 TOTAL-DIAS       PIC 9999.
+           03 FILLER           PIC X(3) VALUE ' '.
+           03 FILLER           PIC X(8) VALUE 'Importe '.
+           03 TOTAL-IMP        PIC 9(4)V99.
+       01  PTR-TOT-GRAL.
+           03 FILLER           PIC X(42) VALUE 'Totales general'.
+           03 FILLER           PIC X(8) VALUE 'Importe '.
+           03 TOT-GRAL         PIC 9(7)V99.
        01  RECH.
            03  RECH-PATENTE        PIC X(6).
            03  RECH-FECHA          PIC 9(8).
@@ -159,7 +247,6 @@
             PERFORM 010-ABRIR-ARCHIVOS.
             PERFORM 020-LEER-ARCHIVOS.
             MOVE 0 TO WS-TOTAL-GENERAL.
-            PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
             PERFORM 040-CARGA-TABLA.
             PERFORM 050-PROCESAR UNTIL M-EOF = "SI" AND
             N1-EOF = "SI" AND N2-EOF = "SI" AND N3-EOF = "SI".
@@ -209,10 +296,36 @@
            PERFORM 080-LEER-NOV2.
            PERFORM 080-LEER-NOV3.
       *-----------------------------------------------------------------
+       COMPLETAR-HOJA.
+               WRITE LINEA FROM PE3-ENCABE.
+               ADD 1 TO WS-LINEA.
       *******
        030-ESCRIBIR-CABECERA-LISTADO.
       *******
-
+           IF WS-ESCRIBE_ENCABE = "SI"
+               MOVE FUNCTION CURRENT-DATE TO FECHA
+               MOVE FECHA-DD TO PE1-FECHA-DD
+               MOVE FECHA-MM TO PE1-FECHA-MM
+               MOVE FECHA-AA TO PE1-FECHA-AA
+               ADD 1 TO PE1-HOJA
+               WRITE LINEA FROM PE1-ENCABE
+               WRITE LINEA FROM PE2-ENCABE
+               WRITE LINEA FROM PE3-ENCABE
+               MOVE PTR-DESC TO PE4-DESC
+               MOVE WS-NROPATENTE TO PE4-PATENTE
+               WRITE LINEA FROM PE4-ENCABE
+               MOVE PTR-MARCA TO PE5-MARCA
+               WRITE LINEA FROM PE5-ENCABE
+               MOVE PTR-COLOR TO PE6-COLOR
+               WRITE LINEA FROM PE6-ENCABE
+               MOVE PTR-TAMANIO TO PE7-TAMANIO
+               WRITE LINEA FROM PE7-ENCABE
+               WRITE LINEA FROM PE3-ENCABE
+               WRITE LINEA FROM PE8-ENCABE
+               WRITE LINEA FROM PE9-ENCABE
+               MOVE 11 TO WS-LINEA.
+           WRITE LINEA FROM PTR-ROW.
+           ADD 1 TO WS-LINEA.
       *-----------------------------------------------------------------
       *******
        040-CARGA-TABLA.
@@ -230,16 +343,31 @@
            MOVE WS-NROPATENTE TO WS-MENOR-PATENTE.
            MOVE 0 TO WS-TOTAL-PATENTE.
            MOVE 0 TO WS-CANTIDAD-DIAS.
+           MOVE "SI" TO WS-ESCRIBE_ENCABE.
            PERFORM 110-PROCESO-PATENTE UNTIL (M-EOF = "SI" AND
             N1-EOF = "SI" AND N2-EOF = "SI" AND N3-EOF = "SI") OR
             WS-MENOR-PATENTE <> WS-NROPATENTE.
-           PERFORM 120-ESCRIBIR-TOTAL-PATENTE.
+           WRITE LINEA FROM PE3-ENCABE.
+           IF WS-CANTIDAD-DIAS <> 0
+           ADD 2 TO WS-LINEA
+           PERFORM 120-ESCRIBIR-TOTAL-PATENTE
+           WRITE LINEA FROM PE3-ENCABE.
            COMPUTE WS-TOTAL-GENERAL = WS-TOTAL-GENERAL +
            WS-TOTAL-PATENTE.
       *-----------------------------------------------------------------
       *******
        060-ESCRIBIR-TOTAL-GENERAL.
       *******
+           MOVE FUNCTION CURRENT-DATE TO FECHA
+           MOVE FECHA-DD TO PE1-FECHA-DD
+           MOVE FECHA-MM TO PE1-FECHA-MM
+           MOVE FECHA-AA TO PE1-FECHA-AA
+           ADD 1 TO PE1-HOJA
+           WRITE LINEA FROM PE1-ENCABE
+           WRITE LINEA FROM PE2-ENCABE
+           WRITE LINEA FROM PE3-ENCABE
+           MOVE WS-TOTAL-GENERAL TO TOT-GRAL.
+           WRITE LINEA FROM PTR-TOT-GRAL.
       *-----------------------------------------------------------------
       *******
        070-CERRAR-ARCHIVOS.
@@ -354,6 +482,11 @@
       *******
        120-ESCRIBIR-TOTAL-PATENTE.
       *******
+           MOVE WS-TOTAL-PATENTE TO TOTAL-IMP.
+           MOVE WS-CANTIDAD-DIAS TO TOTAL-DIAS.
+           WRITE LINEA FROM PTR-TOTAL.
+           ADD 1 TO WS-LINEA.
+           PERFORM COMPLETAR-HOJA UNTIL WS-LINEA = 60.
       *-----------------------------------------------------------------
       *******
        130-BUSCO-TABLA.
@@ -363,6 +496,11 @@
            SEARCH WS-AUTO
                AT END MOVE "NO" TO WS-EXISTE-TABLA
                WHEN WS-AUTO-PATENTE(IND)EQUALS WS-NROPATENTE
+               MOVE WS-AUTO-DESC(IND) TO PTR-DESC
+               MOVE WS-AUTO-MARCA(IND) TO PTR-MARCA
+               MOVE WS-AUTO-COLOR(IND) TO PTR-COLOR
+               MOVE WS-AUTO-TAMAÑO(IND) TO PTR-TAMANIO
+               MOVE WS-AUTO-IMPORTE(IND) TO PTR-IMPORTE
                MOVE "SI" TO WS-EXISTE.
       *******
       *-----------------------------------------------------------------
@@ -396,6 +534,12 @@
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                WRITE ACT FROM MAE
+               MOVE MAE-FECHA TO ROW-FECHA
+               MOVE MAE-TIPO-DOC TO ROW-DOC
+               MOVE MAE-NRO-DOC TO ROW-NRO-DOC
+               MOVE 0 TO ROW-AG
+               PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
+               MOVE "NO" TO WS-ESCRIBE_ENCABE
                MOVE "SI" TO WS-ALQ
            PERFORM 080-LEER-MAESTRO.
       *-----------------------------------------------------------------
@@ -403,9 +547,15 @@
        150-PROCESO-N1.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
-               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + PTR-IMPORTE
                COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
                WRITE ACT FROM NOV1
+               MOVE NOV1-FECHA TO ROW-FECHA
+               MOVE NOV1-TIPO-DOC TO ROW-DOC
+               MOVE NOV1-NRO-DOC TO ROW-NRO-DOC
+               MOVE 1 TO ROW-AG
+               PERFORM 030-ESCRIBIR-CABECERA-LISTADO
+               MOVE "NO" TO WS-ESCRIBE_ENCABE
                MOVE "SI" TO WS-ALQ
            ELSE
                MOVE NOV1-PATENTE TO RECH-PATENTE.
@@ -420,8 +570,14 @@
        150-PROCESO-N2.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
-               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + PTR-IMPORTE
                COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
+               MOVE NOV2-FECHA TO ROW-FECHA
+               MOVE NOV2-TIPO-DOC TO ROW-DOC
+               MOVE NOV2-NRO-DOC TO ROW-NRO-DOC
+               MOVE 2 TO ROW-AG
+               PERFORM 030-ESCRIBIR-CABECERA-LISTADO
+               MOVE "NO" TO WS-ESCRIBE_ENCABE
                WRITE ACT FROM NOV2
                MOVE "SI" TO WS-ALQ
            ELSE
@@ -437,8 +593,14 @@
        150-PROCESO-N3.
       *******
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
-               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + 1
+               COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + PTR-IMPORTE
                COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
+               MOVE NOV3-FECHA TO ROW-FECHA
+               MOVE NOV3-TIPO-DOC TO ROW-DOC
+               MOVE NOV3-NRO-DOC TO ROW-NRO-DOC
+               MOVE 3 TO ROW-AG
+               PERFORM 030-ESCRIBIR-CABECERA-LISTADO
+               MOVE "NO" TO WS-ESCRIBE_ENCABE
                WRITE ACT FROM NOV3
                MOVE "SI" TO WS-ALQ
            ELSE
