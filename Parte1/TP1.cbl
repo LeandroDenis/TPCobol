@@ -1,6 +1,6 @@
       ******************************************************************
       * Author: Leandro Denis
-      * Purpose: TP Algoritmos 4 Parte 1
+      * Purpose: TP 1 Algoritmos 4 Parte 1
       ******************************************************************
        IDENTIFICATION DIVISION.
        PROGRAM-ID. TP-PARTE-1.
