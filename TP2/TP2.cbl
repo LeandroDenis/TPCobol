@@ -3,7 +3,7 @@
       * Purpose: TP 2 Algoritmos 4
       ******************************************************************
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. TP-2.
+       PROGRAM-ID. TP2.
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
@@ -14,22 +14,15 @@
                                ORGANIZATION IS INDEXED
                                ACCESS MODE IS SEQUENTIAL
                                RECORD KEY IS ALQ-PATENTE
-                               ALTERNATE KEY IS ALQ-FECHA
+      *>                          ALTERNATE KEY IS ALQ-FECHA
                                FILE STATUS IS M-ESTADO.
 
            SELECT CHOFERES     ASSIGN TO DISK
                                ORGANIZATION IS INDEXED
                                ACCESS MODE IS DYNAMIC
                                RECORD KEY IS CHO-NRO-LEGAJO
-                               ALTERNATE KEY IS CHO-FECHA-DESDE
+      *>                          ALTERNATE KEY IS CHO-FECHA-DESDE
                                FILE STATUS IS CHO-ESTADO.
-
-           SELECT CLIENTES     ASSIGN TO DISK
-                               ORGANIZATION IS INDEXED
-                               ACCESS MODE IS RANDOM
-                               RECORD KEY IS CLI-NUMERO
-                               ALTERNATE KEY IS CLI-DOCUMENTO
-                               FILE STATUS IS CLI-ESTADO.
 
            SELECT RECHAZOS     ASSIGN TO DISK
                                ORGANIZATION IS INDEXED
@@ -54,22 +47,12 @@
            03  ALQ-ESTADO          PIC X.
 
        FD  LISTADO  LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "../LISTADO.DAT".
+                   VALUE OF FILE-ID IS "../LISTADO.TXT".
 
        01  LINEA               PIC X(80).
 
-       FD  CLIENTES LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "../CLIENTES.DAT".
-
-       01  CLI.
-           03 CLI-NUMERO       PIC X(8).
-           03 CLI-FEC-ALTA     PIC 9(8).
-           03 CLI-TELEFONO     PIC X(20).
-           03 CLI-DIRECCION    PIC X(30).
-           03 CLI-DOCUMENTO    PIC X(20).
-
        FD  CHOFERES LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "../CHOFERES.DAT".
+                   VALUE OF FILE-ID IS "../CHOFERES.TXT".
 
        01  CHO.
            03 CHO-NRO-LEGAJO       PIC X(7).
@@ -78,7 +61,7 @@
            03 CHO-TURNO            PIC X.
 
        FD  RECHAZOS LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "./RECHAZOS.DAT".
+                   VALUE OF FILE-ID IS "./RECHAZOS.TXT".
 
        01  RECH.
            03 RECH-PATENTE         PIC X(6).
@@ -92,12 +75,9 @@
            88 EOF                          VALUE "SI".
        77  CHO-EOF             PIC XXX     VALUE "NO".
            88 EOF                          VALUE "SI".
-       77  CLI-EOF             PIC XXX     VALUE "NO".
-           88 EOF                          VALUE "SI".
        77  RECH-EOF             PIC XXX     VALUE "NO".
            88 EOF                          VALUE "SI".
        77  RECH-ESTADO          PIC XX.
-       77  CLI-ESTADO          PIC XX.
        77  M-ESTADO            PIC XX.
        77  CHO-ESTADO          PIC XX.
        77  WS-TOTAL-GENERAL    PIC 9(4).
@@ -151,10 +131,23 @@
            03 ROW-MARCA        PIC X(20).
            03 ROW-ENE          PIC 999.
 
+       01  LK-TIPO-OP          PIC X.
+       01  LK-NRO-DOC          PIC X(20).
+       01  LK-RES              PIC X.
+       01  LK-CLIENTE          PIC X(8).
+
        PROCEDURE DIVISION.
        COMIENZO.
             PERFORM 010-ABRIR-ARCHIVOS.
             PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
+            MOVE 'A' TO LK-TIPO-OP.
+            MOVE '35363296' TO LK-NRO-DOC.
+            CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
+      -    TE.
+            MOVE 'P'TO LK-TIPO-OP.
+            CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CL
+      -        IENTE.
+            DISPLAY LK-CLIENTE.
             PERFORM 070-CERRAR-ARCHIVOS.
             STOP RUN.
 
@@ -218,4 +211,65 @@
                STOP RUN.
       *******
       *-----------------------------------------------------------------
-       END PROGRAM TP-2.
+       END PROGRAM TP2.
+
+       PROGRAM-ID. SUBPGR.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT CLIENTES     ASSIGN TO DISK
+                               ORGANIZATION IS INDEXED
+                               ACCESS MODE IS RANDOM
+                               RECORD KEY IS CLI-NUMERO
+                               ALTERNATE KEY IS CLI-DOCUMENTO
+                               FILE STATUS IS CLI-ESTADO.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  CLIENTES LABEL RECORD IS STANDARD
+                   VALUE OF FILE-ID IS "../CLIENTES.TXT".
+
+       01  CLI.
+           03 CLI-NUMERO       PIC X(8).
+           03 CLI-FEC-ALTA     PIC 9(8).
+           03 CLI-TELEFONO     PIC X(20).
+           03 CLI-DIRECCION    PIC X(30).
+           03 CLI-DOCUMENTO    PIC X(20).
+       WORKING-STORAGE SECTION.
+       77  CLI-EOF             PIC XXX     VALUE "NO".
+           88 EOF                          VALUE "SI".
+       77  CLI-ESTADO          PIC XX.
+       LINKAGE SECTION.
+       01  OPER                PIC X.
+       01  DOC                 PIC X(20).
+       01  NUMERO              PIC X(8).
+       01  RES                 PIC X.
+       PROCEDURE DIVISION USING OPER, DOC, RES, NUMERO.
+           MOVE SPACES TO RES.
+           IF OPER EQUALS 'A'
+               PERFORM CLIENTE-ABRIR-ARCHIVO
+               EXIT PROGRAM.
+           IF OPER EQUALS 'P'
+               PERFORM CLIENTE-BUSCAR
+               EXIT PROGRAM.
+           IF OPER EQUALS 'C'
+               PERFORM CLIENTE-CERRAR-ARCHIVO
+               EXIT PROGRAM.
+           MOVE 'E' TO RES.
+           EXIT PROGRAM.
+
+       CLIENTE-ABRIR-ARCHIVO.
+           OPEN INPUT CLIENTES.
+           IF CLI-ESTADO NOT = ZERO
+               DISPLAY "ERROR EN OPEN CLIENTES FS: " CLI-ESTADO
+               STOP RUN.
+       CLIENTE-CERRAR-ARCHIVO.
+           CLOSE CLIENTES.
+
+       CLIENTE-BUSCAR.
+           MOVE DOC TO CLI-DOCUMENTO.
+           READ CLIENTES RECORD KEY IS CLI-DOCUMENTO.
+           IF CLI-ESTADO NOT = ZERO
+               DISPLAY 'ERROR'
+           ELSE
+               MOVE CLI-NUMERO TO NUMERO.
+       END PROGRAM SUBPGR.
