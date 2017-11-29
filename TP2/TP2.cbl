@@ -31,6 +31,9 @@
                                ALTERNATE KEY IS RECH-FECHA
                                FILE STATUS IS RECH-ESTADO.
 
+           SELECT ARCH-AUX     ASSIGN TO DISK
+                               SORT STATUS IS FS-AUX.
+
            SELECT LISTADO      ASSIGN TO DISK
                                ORGANIZATION IS LINE SEQUENTIAL.
        DATA DIVISION.
@@ -70,6 +73,16 @@
            03 RECH-NRO-DOC         PIC X(20).
            03 RECH-IMPORTE         PIC 9(4)V99.
 
+       SD  ARCH-AUX    DATA RECORD IS REG-AUX.
+       01  REG-AUX.
+           03  AUX-PATENTE         PIC X(6).
+           03  AUX-FECHA           PIC 9(8).
+           03  AUX-TIPO-DOC        PIC X.
+           03  AUX-NRO-DOC         PIC X(20).
+           03  AUX-IMPORTE         PIC 9(4)V99.
+           03  AUX-CHOFER          PIC X(7).
+           03  AUX-ESTADO          PIC X.
+
        WORKING-STORAGE SECTION.
        77  M-EOF               PIC XXX     VALUE "NO".
            88 EOF                          VALUE "SI".
@@ -78,6 +91,7 @@
        77  RECH-EOF             PIC XXX     VALUE "NO".
            88 EOF                          VALUE "SI".
        77  RECH-ESTADO          PIC XX.
+       77  FS-AUX              PIC XX.
        77  M-ESTADO            PIC XX.
        77  CHO-ESTADO          PIC XX.
        77  WS-TOTAL-GENERAL    PIC 9(4).
@@ -140,14 +154,7 @@
        COMIENZO.
             PERFORM 010-ABRIR-ARCHIVOS.
             PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
-            MOVE 'A' TO LK-TIPO-OP.
-            MOVE '35363296' TO LK-NRO-DOC.
-            CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
-      -    TE.
-            MOVE 'P'TO LK-TIPO-OP.
-            CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CL
-      -        IENTE.
-            DISPLAY LK-CLIENTE.
+            PERFORM 050-PROCESAR.
             PERFORM 070-CERRAR-ARCHIVOS.
             STOP RUN.
 
@@ -155,6 +162,9 @@
       *******
        010-ABRIR-ARCHIVOS.
       *******
+           MOVE 'A' TO LK-TIPO-OP.
+           CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
+      -    TE.
            OPEN INPUT M.
            IF M-ESTADO NOT = ZERO
                DISPLAY "ERROR EN OPEN MAESTRO FS: " M-ESTADO
@@ -189,7 +199,11 @@
       *******
        050-PROCESAR.
       *******
-           PERFORM 080-LEER-MAESTRO.
+           SORT ARCH-AUX
+               ON ASCENDING KEY AUX-PATENTE
+               ON ASCENDING KEY AUX-FECHA
+               INPUT PROCEDURE IS ENTRADA
+               OUTPUT PROCEDURE IS SALIDA.
       *-----------------------------------------------------------------
       *******
        070-CERRAR-ARCHIVOS.
@@ -199,6 +213,9 @@
                CHOFERES
                RECHAZOS
                LISTADO.
+           MOVE 'C' TO LK-TIPO-OP.
+           CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
+      -    TE.
       *******
       *-----------------------------------------------------------------
       *******
@@ -209,6 +226,16 @@
            IF M-ESTADO NOT = ZERO AND 10
                DISPLAY "ERROR EN READ MAESTRO  FS: " M-ESTADO
                STOP RUN.
+      *******
+      *-----------------------------------------------------------------
+      ******
+           ENTRADA SECTION.
+           PERFORM 080-LEER-MAESTRO.
+      *******
+      *-----------------------------------------------------------------
+      ******
+           SALIDA SECTION.
+
       *******
       *-----------------------------------------------------------------
        END PROGRAM TP2.
