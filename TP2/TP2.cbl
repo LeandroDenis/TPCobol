@@ -94,13 +94,10 @@
        77  FS-AUX              PIC XX.
        77  M-ESTADO            PIC XX.
        77  CHO-ESTADO          PIC XX.
+       77  AUX-EOF             PIC XX.
        77  WS-TOTAL-GENERAL    PIC 9(4).
        01  WS-SUB              PIC 9(3).
-       01  CHOF.
-           03 CHOF-NRO-LEGAJO       PIC X(7).
-           03 CHOF-FECHA-DESDE      PIC 9(8).
-           03 CHOF-FECHA-HASTA      PIC 9(8).
-           03 CHOF-TURNO            PIC X.
+       01  WS-RECHAZADO        PIC XX.
        01  FECHA.
            03 FECHA-AA         PIC 9(4).
            03 FECHA-MM         PIC 9(2).
@@ -141,12 +138,34 @@
            03 FILLER           PIC X(10) VALUE ' '.
            03 FILLER           PIC X(10) VALUE 'Direccion'.
 
+       01  WS-TOTAL            PIC 999.
+       01  WS-TOTAL-FECHA      PIC 999.
+       01  WS-TOTAL-CHOFER     PIC 999.
+       01  WS-FECHA            PIC 9(8).
+       01  WS-CHOFER           PIC X(7).
+
        01  PTR-ROW.
-           03 ROW-MARCA        PIC X(20).
-           03 ROW-ENE          PIC 999.
+           03 ROW-CLIENTE      PIC X(8).
+           03 FILLER           PIC X(10) VALUE ' '.
+           03 ROW-TIPO-DOC     PIC X.
+           03 FILLER           PIC X(10) VALUE ' '.
+           03 ROW-DOC          PIC X(20).
+           03 FILLER           PIC X(10) VALUE ' '.
+           03 ROW-DIRECCION    PIC X(30) VALUE ' '.
+
+       01  PTR-TOTAL-CHOFER.
+           03 FILLER           PIC X(20) VALUE 'Total por chofer: '.
+           01 PTR-CHOFER       PIC 999.
+       01  PTR-TOTAL-FECHA.
+           03 FILLER           PIC X(20) VALUE 'Total por fecha: '.
+           01 PTR-FECHA       PIC 999.
+       01  PTR-TOTAL.
+           03 FILLER           PIC X(20) VALUE 'Totales generales: '.
+           01 PTR-TOTALGRAL    PIC 999.
 
        01  LK-TIPO-OP          PIC X.
        01  LK-NRO-DOC          PIC X(20).
+       01  LK-DIRECCION        PIC X(20).
        01  LK-RES              PIC X.
        01  LK-CLIENTE          PIC X(8).
 
@@ -165,7 +184,7 @@
            MOVE 'A' TO LK-TIPO-OP.
            CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
       -    TE.
-           OPEN INPUT M.
+           OPEN I-O M.
            IF M-ESTADO NOT = ZERO
                DISPLAY "ERROR EN OPEN MAESTRO FS: " M-ESTADO
                STOP RUN.
@@ -200,8 +219,8 @@
        050-PROCESAR.
       *******
            SORT ARCH-AUX
-               ON ASCENDING KEY AUX-PATENTE
                ON ASCENDING KEY AUX-FECHA
+               ON ASCENDING KEY AUX-CHOFER
                INPUT PROCEDURE IS ENTRADA
                OUTPUT PROCEDURE IS SALIDA.
       *-----------------------------------------------------------------
@@ -229,15 +248,110 @@
       *******
       *-----------------------------------------------------------------
       ******
-           ENTRADA SECTION.
-           PERFORM 080-LEER-MAESTRO.
+       ENTRADA SECTION.
+       PERFORM 080-LEER-MAESTRO.
+       PERFORM PROCESAR-ALQ UNTIL M-EOF = "SI".
+       OTRA SECTION.
+      *-----------------------------------------------------------------
+      ******
+       PROCESAR-ALQ.
+       IF ALQ-ESTADO = "P"
+           MOVE ALQ-CHOFER TO CHO-NRO-LEGAJO
+           START CHOFERES KEY IS EQUAL TO CHO-NRO-LEGAJO
+           IF CHO-ESTADO = 00
+               PERFORM ACTUALIZAR
+           ELSE
+               IF CHO-ESTADO = 10
+                   PERFORM RECHAZO
+               ELSE
+                   DISPLAY 'ERROR ABRIENDO CHOFERES 'CHO-ESTADO.
+       PERFORM 080-LEER-MAESTRO.
       *******
       *-----------------------------------------------------------------
       ******
-           SALIDA SECTION.
-
+       ACTUALIZAR.
+           PERFORM LEER-CHOFERES.
+           MOVE "SI" TO WS-RECHAZADO.
+           PERFORM PROCESO-FECHA UNTIL CHO-ESTADO NOT ZERO OR
+           CHO-NRO-LEGAJO <> ALQ-CHOFER.
+           IF WS-RECHAZADO = "SI"
+               PERFORM RECHAZO.
       *******
       *-----------------------------------------------------------------
+      ******
+       PROCESO-FECHA.
+           IF ALQ-FECHA <= CHO-FECHA-HASTA AND ALQ-FECHA >= CHO-FECHA-
+      -    DESDE
+           MOVE ALQ TO REG-AUX
+           MOVE "NO" TO WS-RECHAZADO
+           MOVE "T" TO ALQ-ESTADO
+           REWRITE ALQ
+           RELEASE REG-AUX
+           PERFORM LEER-CHOFERES.
+      *******
+      *-----------------------------------------------------------------
+      ******
+       LEER-CHOFERES.
+           READ CHOFERES NEXT RECORD.
+      *******
+      *-----------------------------------------------------------------
+      ******
+       RECHAZO.
+           WRITE RECH FROM ALQ.
+      *******
+      *-----------------------------------------------------------------
+      ******
+       SALIDA SECTION.
+      *******
+      *-----------------------------------------------------------------
+      *******
+           MOVE "NO" TO AUX-EOF.
+           MOVE 0 TO WS-TOTAL.
+           MOVE 0 TO WS-TOTAL-FECHA.
+           MOVE 0 TO WS-TOTAL-CHOFER.
+           RETURN ARCH-AUX RECORD AT END MOVE "SI" TO AUX-EOF.
+           PERFORM PROCESAR-ORDENADO UNTIL AUX-EOF = "SI".
+           MOVE WS-TOTAL TO PTR-TOTALGRAL.
+           WRITE LINEA FROM PTR-TOTAL.
+
+       OTRA-SALIDA SECTION.
+      *-----------------------------------------------------------------
+      *******
+       PROCESAR-ORDENADO.
+               MOVE AUX-FECHA TO WS-FECHA.
+               PERFORM PROCESAR-CHOFER UNTIL AUX-FECHA <> WS-FECHA OR
+               AUX-EOF = "SI".
+               ADD WS-TOTAL-FECHA TO WS-TOTAL.
+               MOVE WS-TOTAL-FECHA TO PTR-FECHA.
+               WRITE LINEA FROM PTR-TOTAL-FECHA.
+               MOVE 0 TO WS-TOTAL-FECHA.
+      *-----------------------------------------------------------------
+      *******
+       PROCESAR-CHOFER.
+           MOVE AUX-CHOFER TO WS-CHOFER.
+           PERFORM ESCRIBIR-LISTADO UNTIL (AUX-CHOFER <> WS-CHOFER OR
+           AUX-EOF = "SI").
+           ADD WS-TOTAL-CHOFER TO WS-TOTAL-FECHA.
+           MOVE WS-TOTAL-CHOFER TO PTR-CHOFER.
+           DISPLAY PTR-TOTAL-CHOFER.
+           WRITE LINEA FROM PTR-TOTAL-CHOFER.
+           MOVE 0 TO WS-TOTAL-CHOFER.
+      *-----------------------------------------------------------------
+      *******
+       ESCRIBIR-LISTADO.
+           ADD 1 TO WS-TOTAL-CHOFER.
+           MOVE 'P' TO LK-TIPO-OP.
+           MOVE AUX-NRO-DOC TO LK-NRO-DOC.
+           CALL 'SUBPGR' USING LK-TIPO-OP, LK-NRO-DOC, LK-RES, LK-CLIEN
+      -    TE, LK-DIRECCION.
+           MOVE LK-CLIENTE TO ROW-CLIENTE.
+           MOVE AUX-TIPO-DOC TO ROW-TIPO-DOC.
+           MOVE AUX-NRO-DOC TO ROW-DOC.
+           MOVE LK-DIRECCION TO ROW-DIRECCION.
+           WRITE LINEA FROM PTR-ROW.
+           RETURN ARCH-AUX RECORD AT END MOVE "SI" TO AUX-EOF.
+      *-----------------------------------------------------------------
+      *******
        END PROGRAM TP2.
 
        PROGRAM-ID. SUBPGR.
@@ -268,9 +382,10 @@
        LINKAGE SECTION.
        01  OPER                PIC X.
        01  DOC                 PIC X(20).
+       01  DIRECCION           PIC X(30).
        01  NUMERO              PIC X(8).
        01  RES                 PIC X.
-       PROCEDURE DIVISION USING OPER, DOC, RES, NUMERO.
+       PROCEDURE DIVISION USING OPER, DOC, RES, NUMERO, DIRECCION.
            MOVE SPACES TO RES.
            IF OPER EQUALS 'A'
                PERFORM CLIENTE-ABRIR-ARCHIVO
@@ -298,5 +413,6 @@
            IF CLI-ESTADO NOT = ZERO
                DISPLAY 'ERROR'
            ELSE
-               MOVE CLI-NUMERO TO NUMERO.
+               MOVE CLI-NUMERO TO NUMERO
+               MOVE CLI-DIRECCION TO DIRECCION.
        END PROGRAM SUBPGR.

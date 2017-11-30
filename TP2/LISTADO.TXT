@@ -1,4 +1,4 @@
-Fecha: 28/11/2017                                                      Hoja: 001
+Fecha: 30/11/2017                                                      Hoja: 001
                               Listado alquileres aprobados
 
 Fecha: 00000000
@@ -6,3 +6,7 @@ Chofer:         Turno:
 
                Cliente      Tipo Doc      Nro Documento          Direccion
 ________________________________________________________________________________
+A100135           D          35363296                      ARAOZ 2013
+Total por chofer:
+Total por fecha:
+Totales generales:
