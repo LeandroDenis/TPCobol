@@ -143,6 +143,7 @@
        01  WS-TOTAL-CHOFER     PIC 999.
        01  WS-FECHA            PIC 9(8).
        01  WS-CHOFER           PIC X(7).
+       01  WS-LINEA            PIC 999.
 
        01  PTR-ROW.
            03 FILLER           PIC X(15) VALUE ' '.
@@ -173,11 +174,9 @@
        PROCEDURE DIVISION.
        COMIENZO.
             PERFORM 010-ABRIR-ARCHIVOS.
-            PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
             PERFORM 050-PROCESAR.
             PERFORM 070-CERRAR-ARCHIVOS.
             STOP RUN.
-
       *-----------------------------------------------------------------
       *******
        010-ABRIR-ARCHIVOS.
@@ -202,19 +201,24 @@
       *******
        030-ESCRIBIR-CABECERA-LISTADO.
       *******
-           MOVE FUNCTION CURRENT-DATE TO FECHA.
-           MOVE FECHA-DD TO PE1-FECHA-DD.
-           MOVE FECHA-MM TO PE1-FECHA-MM.
-           MOVE FECHA-AA TO PE1-FECHA-AA.
-           ADD 1 TO PE1-HOJA.
-           WRITE LINEA FROM PE1-ENCABE.
-           WRITE LINEA FROM PE2-ENCABE.
-           WRITE LINEA FROM PE3-ENCABE.
-           WRITE LINEA FROM PE4-ENCABE.
-           WRITE LINEA FROM PE6-ENCABE.
-           WRITE LINEA FROM PE3-ENCABE.
-           WRITE LINEA FROM PE7-ENCABE.
-           WRITE LINEA FROM PE5-ENCABE.
+           IF WS-LINEA >= 60
+           MOVE FUNCTION CURRENT-DATE TO FECHA
+           MOVE FECHA-DD TO PE1-FECHA-DD
+           MOVE FECHA-MM TO PE1-FECHA-MM
+           MOVE FECHA-AA TO PE1-FECHA-AA
+           ADD 1 TO PE1-HOJA
+           WRITE LINEA FROM PE1-ENCABE
+           WRITE LINEA FROM PE2-ENCABE
+           WRITE LINEA FROM PE3-ENCABE
+           MOVE ALQ-FECHA TO PE4-FECHA
+           WRITE LINEA FROM PE4-ENCABE
+           MOVE ALQ-CHOFER TO PE6-CHOFER
+           MOVE CHO-TURNO TO PE6-TURNO
+           WRITE LINEA FROM PE6-ENCABE
+           WRITE LINEA FROM PE3-ENCABE
+           WRITE LINEA FROM PE7-ENCABE
+           WRITE LINEA FROM PE5-ENCABE
+           MOVE 9 TO WS-LINEA.
       *-----------------------------------------------------------------
       *******
        050-PROCESAR.
@@ -250,6 +254,7 @@
       *-----------------------------------------------------------------
       ******
        ENTRADA SECTION.
+       MOVE 100 TO WS-LINEA.
        PERFORM 080-LEER-MAESTRO.
        PERFORM PROCESAR-ALQ UNTIL M-EOF = "SI".
        OTRA SECTION.
@@ -272,6 +277,7 @@
       ******
        ACTUALIZAR.
            PERFORM LEER-CHOFERES.
+           PERFORM 030-ESCRIBIR-CABECERA-LISTADO.
            MOVE "SI" TO WS-RECHAZADO.
            PERFORM PROCESO-FECHA UNTIL CHO-ESTADO NOT ZERO OR
            CHO-NRO-LEGAJO <> ALQ-CHOFER.
@@ -304,8 +310,6 @@
       ******
        SALIDA SECTION.
       *******
-      *-----------------------------------------------------------------
-      *******
            MOVE "NO" TO AUX-EOF.
            MOVE 0 TO WS-TOTAL.
            MOVE 0 TO WS-TOTAL-FECHA.
@@ -314,6 +318,7 @@
            PERFORM PROCESAR-ORDENADO UNTIL AUX-EOF = "SI".
            MOVE WS-TOTAL TO PTR-TOTALGRAL.
            WRITE LINEA FROM PTR-TOTAL.
+           ADD 1 TO WS-LINEA.
 
        OTRA-SALIDA SECTION.
       *-----------------------------------------------------------------
@@ -326,6 +331,16 @@
                MOVE WS-TOTAL-FECHA TO PTR-FECHA.
                WRITE LINEA FROM PTR-TOTAL-FECHA.
                MOVE 0 TO WS-TOTAL-FECHA.
+               ADD 1 TO WS-LINEA.
+               PERFORM LLENAR-HOJA.
+      *-----------------------------------------------------------------
+      *******
+       LLENAR-HOJA.
+           IF WS-LINEA < 60
+               PERFORM UNTIL WS-LINEA = 61
+                   WRITE LINEA FROM PE3-ENCABE
+                   ADD 1 TO WS-LINEA
+               END-PERFORM.
       *-----------------------------------------------------------------
       *******
        PROCESAR-CHOFER.
@@ -334,10 +349,8 @@
            AUX-EOF = "SI").
            ADD WS-TOTAL-CHOFER TO WS-TOTAL-FECHA.
            MOVE WS-TOTAL-CHOFER TO PTR-CHOFER.
-           display WS-TOTAL-CHOFER.
-           display PTR-CHOFER.
-           DISPLAY PTR-TOTAL-CHOFER.
            WRITE LINEA FROM PTR-TOTAL-CHOFER.
+           ADD 1 TO WS-LINEA.
            MOVE 0 TO WS-TOTAL-CHOFER.
       *-----------------------------------------------------------------
       *******
@@ -352,6 +365,7 @@
            MOVE AUX-NRO-DOC TO ROW-DOC.
            MOVE LK-DIRECCION TO ROW-DIRECCION.
            WRITE LINEA FROM PTR-ROW.
+           ADD 1 TO WS-LINEA.
            RETURN ARCH-AUX RECORD AT END MOVE "SI" TO AUX-EOF.
       *-----------------------------------------------------------------
       *******
