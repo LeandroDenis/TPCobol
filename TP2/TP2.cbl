@@ -145,23 +145,24 @@
        01  WS-CHOFER           PIC X(7).
 
        01  PTR-ROW.
+           03 FILLER           PIC X(15) VALUE ' '.
            03 ROW-CLIENTE      PIC X(8).
-           03 FILLER           PIC X(10) VALUE ' '.
+           03 FILLER           PIC X(5) VALUE ' '.
            03 ROW-TIPO-DOC     PIC X.
-           03 FILLER           PIC X(10) VALUE ' '.
+           03 FILLER           PIC X(15) VALUE ' '.
            03 ROW-DOC          PIC X(20).
-           03 FILLER           PIC X(10) VALUE ' '.
+           03 FILLER           PIC X(1) VALUE ' '.
            03 ROW-DIRECCION    PIC X(30) VALUE ' '.
 
        01  PTR-TOTAL-CHOFER.
            03 FILLER           PIC X(20) VALUE 'Total por chofer: '.
-           01 PTR-CHOFER       PIC 999.
+           03 PTR-CHOFER       PIC 999.
        01  PTR-TOTAL-FECHA.
            03 FILLER           PIC X(20) VALUE 'Total por fecha: '.
-           01 PTR-FECHA       PIC 999.
+           03 PTR-FECHA       PIC 999.
        01  PTR-TOTAL.
            03 FILLER           PIC X(20) VALUE 'Totales generales: '.
-           01 PTR-TOTALGRAL    PIC 999.
+           03 PTR-TOTALGRAL    PIC 999.
 
        01  LK-TIPO-OP          PIC X.
        01  LK-NRO-DOC          PIC X(20).
@@ -333,6 +334,8 @@
            AUX-EOF = "SI").
            ADD WS-TOTAL-CHOFER TO WS-TOTAL-FECHA.
            MOVE WS-TOTAL-CHOFER TO PTR-CHOFER.
+           display WS-TOTAL-CHOFER.
+           display PTR-CHOFER.
            DISPLAY PTR-TOTAL-CHOFER.
            WRITE LINEA FROM PTR-TOTAL-CHOFER.
            MOVE 0 TO WS-TOTAL-CHOFER.
