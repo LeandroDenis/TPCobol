@@ -59,7 +59,7 @@
            MOVE DOC TO CLI-DOCUMENTO.
            READ CLIENTES RECORD KEY IS CLI-DOCUMENTO.
            IF CLI-ESTADO NOT = ZERO
-               DISPLAY 'ERROR'
+               MOVE "E" TO RES
            ELSE
                MOVE CLI-NUMERO TO NUMERO
                MOVE CLI-DIRECCION TO DIRECCION.
