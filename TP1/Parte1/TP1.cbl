@@ -558,11 +558,11 @@
                MOVE "NO" TO WS-ESCRIBE_ENCABE
                MOVE "SI" TO WS-ALQ
            ELSE
-               MOVE NOV1-PATENTE TO RECH-PATENTE.
-               MOVE NOV1-FECHA TO RECH-FECHA.
-               MOVE NOV1-TIPO-DOC TO RECH-TIPO-DOC.
-               MOVE NOV1-NRO-DOC TO RECH-NRO-DOC.
-               MOVE 1 TO RECH-AGENCIA.
+               MOVE NOV1-PATENTE TO RECH-PATENTE
+               MOVE NOV1-FECHA TO RECH-FECHA
+               MOVE NOV1-TIPO-DOC TO RECH-TIPO-DOC
+               MOVE NOV1-NRO-DOC TO RECH-NRO-DOC
+               MOVE 1 TO RECH-AGENCIA
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV1.
       *-----------------------------------------------------------------
@@ -581,17 +581,20 @@
                WRITE ACT FROM NOV2
                MOVE "SI" TO WS-ALQ
            ELSE
-               MOVE NOV2-PATENTE TO RECH-PATENTE.
-               MOVE NOV2-FECHA TO RECH-FECHA.
-               MOVE NOV2-TIPO-DOC TO RECH-TIPO-DOC.
-               MOVE NOV2-NRO-DOC TO RECH-NRO-DOC.
-               MOVE 2 TO RECH-AGENCIA.
+               MOVE NOV2-PATENTE TO RECH-PATENTE
+               MOVE NOV2-FECHA TO RECH-FECHA
+               MOVE NOV2-TIPO-DOC TO RECH-TIPO-DOC
+               MOVE NOV2-NRO-DOC TO RECH-NRO-DOC
+               MOVE 2 TO RECH-AGENCIA
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV2.
       *-----------------------------------------------------------------
       *******
        150-PROCESO-N3.
       *******
+           DISPLAY NOV3-PATENTE.
+           DISPLAY WS-ALQ.
+           DISPLAY WS-EXISTE.
            IF WS-ALQ = "NO" AND WS-EXISTE = "SI"
                COMPUTE WS-TOTAL-PATENTE = WS-TOTAL-PATENTE + PTR-IMPORTE
                COMPUTE WS-CANTIDAD-DIAS = WS-CANTIDAD-DIAS + 1
@@ -604,11 +607,11 @@
                WRITE ACT FROM NOV3
                MOVE "SI" TO WS-ALQ
            ELSE
-               MOVE NOV3-PATENTE TO RECH-PATENTE.
-               MOVE NOV3-FECHA TO RECH-FECHA.
-               MOVE NOV3-TIPO-DOC TO RECH-TIPO-DOC.
-               MOVE NOV3-NRO-DOC TO RECH-NRO-DOC.
-               MOVE 3 TO RECH-AGENCIA.
+               MOVE NOV3-PATENTE TO RECH-PATENTE
+               MOVE NOV3-FECHA TO RECH-FECHA
+               MOVE NOV3-TIPO-DOC TO RECH-TIPO-DOC
+               MOVE NOV3-NRO-DOC TO RECH-NRO-DOC
+               MOVE 3 TO RECH-AGENCIA
                PERFORM 160-GRABAR-RECHAZO.
            PERFORM 080-LEER-NOV3.
       *-----------------------------------------------------------------

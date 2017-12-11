@@ -23,7 +23,7 @@
        DATA DIVISION.
        FILE SECTION.
        FD  M       LABEL RECORD IS STANDARD
-                   VALUE OF FILE-ID IS "../../Parte1/MAESTRO.DAT".
+                   VALUE OF FILE-ID IS "../../Parte1/MAESTRO-ACT.DAT".
        01  MAE.
            03  MAE-PATENTE         PIC X(6).
            03  MAE-FECHA           PIC 9(8).
@@ -309,7 +309,7 @@
       *******
            MOVE 1 TO IND-AUX.
            SEARCH WS-AUX
-               WHEN WS-AUX-PATENTE(IND-AUX)EQUALS AUT-PATENTE
+               WHEN WS-AUX-PATENTE(IND-AUX)EQUALS MAE-PATENTE
                MOVE WS-AUX-MARCA(IND-AUX) TO WS-MARCA.
       *******
       *-----------------------------------------------------------------
